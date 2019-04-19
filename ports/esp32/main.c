@@ -54,6 +54,8 @@
 #include "mpthreadport.h"
 
 // MicroPython runs as a task under FreeRTOS
+#define NVS_NAMESPACE       "MPY_NVM"
+
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
 #define MP_TASK_STACK_SIZE      (16 * 1024)
 #define MP_TASK_STACK_LEN       (MP_TASK_STACK_SIZE / sizeof(StackType_t))
@@ -151,6 +153,11 @@ soft_reset:
 
 void app_main(void) {
     nvs_flash_init();
+    // Open NVS name space
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &mpy_nvs_handle) != ESP_OK) {
+    	mpy_nvs_handle = 0;
+    	ESP_LOGE("MicroPython","Error while opening MicroPython NVS name space");
+    }
     xTaskCreate(mp_task, "mp_task", MP_TASK_STACK_LEN, NULL, MP_TASK_PRIORITY, &mp_main_task_handle);
 }
 

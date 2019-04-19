@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "driver/rtc_io.h"
 #include "driver/gpio.h"
 
 #include "py/runtime.h"
@@ -130,6 +131,20 @@ gpio_num_t machine_pin_get_id(mp_obj_t pin_in) {
     return self->id;
 }
 
+//---------------------------------------
+int machine_pin_get_gpio(mp_obj_t pin_in)
+{
+    if (MP_OBJ_IS_INT(pin_in)) {
+    	int wanted_pin = mp_obj_get_int(pin_in);
+    	if (!GPIO_IS_VALID_GPIO(wanted_pin)) {
+        	mp_raise_ValueError("Invalid pin number");
+    	}
+    	return wanted_pin;
+    }
+    return machine_pin_get_id(pin_in);
+}
+
+
 STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_pin_obj_t *self = self_in;
     mp_printf(print, "Pin(%u)", self->id);
@@ -206,6 +221,10 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
         mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
         machine_pin_obj_init_helper(self, n_args - 1, args + 1, &kw_args);
     }
+
+    // configure the pin for gpio
+    if (rtc_gpio_is_valid_gpio(self->id)) rtc_gpio_deinit(self->id);
+    gpio_pad_select_gpio(self->id);
 
     return MP_OBJ_FROM_PTR(self);
 }

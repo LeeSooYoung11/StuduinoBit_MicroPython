@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -49,6 +50,9 @@
 #include "machine_rtc.h"
 
 #if MICROPY_PY_MACHINE
+
+nvs_handle mpy_nvs_handle = 0;
+bool i2s_driver_installed = false;
 
 typedef enum {
     MP_PWRON_RESET = 1,
@@ -213,6 +217,118 @@ STATIC mp_obj_t machine_enable_irq(mp_obj_t state_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(machine_enable_irq_obj, machine_enable_irq);
 
+// ==== NVS Support ===================================================================
+
+static void checkNVS()
+{
+    if (mpy_nvs_handle == 0) {
+        mp_raise_msg(&mp_type_OSError, "NVS not available!");
+    }
+}
+
+//------------------------------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_set_int (mp_obj_t _key, mp_obj_t _value) {
+    checkNVS();
+
+    const char *key = mp_obj_str_get_str(_key);
+    uint32_t value = mp_obj_get_int_truncated(_value);
+
+    esp_err_t esp_err = nvs_set_i32(mpy_nvs_handle, key, value);
+    if (ESP_OK == esp_err) {
+        nvs_commit(mpy_nvs_handle);
+    }
+    else if (ESP_ERR_NVS_NOT_ENOUGH_SPACE == esp_err || ESP_ERR_NVS_PAGE_FULL == esp_err || ESP_ERR_NVS_NO_FREE_PAGES == esp_err) {
+        mp_raise_msg(&mp_type_OSError, "No space available.");
+    }
+    else if (ESP_ERR_NVS_INVALID_NAME == esp_err || ESP_ERR_NVS_KEY_TOO_LONG == esp_err) {
+        mp_raise_msg(&mp_type_OSError, "Key invalid or too long");
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_machine_nvs_set_int_obj, mod_machine_nvs_set_int);
+
+//-------------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_get_int (mp_obj_t _key) {
+    checkNVS();
+
+    const char *key = mp_obj_str_get_str(_key);
+    int value = 0;
+
+    if (ESP_ERR_NVS_NOT_FOUND == nvs_get_i32(mpy_nvs_handle, key, &value)) {
+        return mp_const_none;
+    }
+    return mp_obj_new_int(value);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_machine_nvs_get_int_obj, mod_machine_nvs_get_int);
+
+//------------------------------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_set_str (mp_obj_t _key, mp_obj_t _value) {
+    checkNVS();
+
+    const char *key = mp_obj_str_get_str(_key);
+    const char *value = mp_obj_str_get_str(_value);
+
+    esp_err_t esp_err = nvs_set_str(mpy_nvs_handle, key, value);
+    if (ESP_OK == esp_err) {
+        nvs_commit(mpy_nvs_handle);
+    }
+    else if (ESP_ERR_NVS_NOT_ENOUGH_SPACE == esp_err || ESP_ERR_NVS_PAGE_FULL == esp_err || ESP_ERR_NVS_NO_FREE_PAGES == esp_err) {
+        mp_raise_msg(&mp_type_OSError, "No space available.");
+    }
+    else if (ESP_ERR_NVS_INVALID_NAME == esp_err || ESP_ERR_NVS_KEY_TOO_LONG == esp_err) {
+        mp_raise_msg(&mp_type_OSError, "Key invalid or too long");
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_machine_nvs_set_str_obj, mod_machine_nvs_set_str);
+
+//-------------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_get_str (mp_obj_t _key) {
+    checkNVS();
+
+    const char *key = mp_obj_str_get_str(_key);
+    size_t len = 0;
+    mp_obj_t strval = mp_const_none;
+
+    esp_err_t ret = nvs_get_str(mpy_nvs_handle, key, NULL, &len);
+    if ((ret == ESP_OK ) && (len > 0)) {
+        char *value = malloc(len);
+        if (value) {
+            esp_err_t ret = nvs_get_str(mpy_nvs_handle, key, value, &len);
+            if ((ret == ESP_OK ) && (len > 0)) {
+                strval = mp_obj_new_str(value, strlen(value));
+                free(value);
+            }
+        }
+    }
+    return strval;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_machine_nvs_get_str_obj, mod_machine_nvs_get_str);
+
+//-----------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_erase (mp_obj_t _key) {
+    checkNVS();
+
+    const char *key = mp_obj_str_get_str(_key);
+
+    if (ESP_ERR_NVS_NOT_FOUND == nvs_erase_key(mpy_nvs_handle, key)) {
+        mp_raise_ValueError("Key not found");
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_machine_nvs_erase_obj, mod_machine_nvs_erase);
+
+//------------------------------------------------
+STATIC mp_obj_t mod_machine_nvs_erase_all (void) {
+    checkNVS();
+
+    if (ESP_OK != nvs_erase_all(mpy_nvs_handle)) {
+        mp_raise_msg(&mp_type_OSError, "Operation failed.");
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_machine_nvs_erase_all_obj, mod_machine_nvs_erase_all);
+
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
 
@@ -235,6 +351,13 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_Timer), MP_ROM_PTR(&machine_timer_type) },
     { MP_ROM_QSTR(MP_QSTR_WDT), MP_ROM_PTR(&machine_wdt_type) },
+
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_setint), MP_ROM_PTR(&mod_machine_nvs_set_int_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_getint), MP_ROM_PTR(&mod_machine_nvs_get_int_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_setstr), MP_ROM_PTR(&mod_machine_nvs_set_str_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_getstr), MP_ROM_PTR(&mod_machine_nvs_get_str_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_erase), MP_ROM_PTR(&mod_machine_nvs_erase_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_nvs_erase_all), MP_ROM_PTR(&mod_machine_nvs_erase_all_obj) },
 
     // wake abilities
     { MP_ROM_QSTR(MP_QSTR_SLEEP), MP_ROM_INT(MACHINE_WAKE_SLEEP) },

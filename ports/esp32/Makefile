@@ -18,12 +18,12 @@ PORT ?= /dev/ttyUSB0
 BAUD ?= 460800
 FLASH_MODE ?= dio
 FLASH_FREQ ?= 40m
-FLASH_SIZE ?= 4MB
+FLASH_SIZE ?= 8MB
 CROSS_COMPILE ?= xtensa-esp32-elf-
 OBJDUMP = $(CROSS_COMPILE)objdump
 
 # SDKCONFIG should be overridden to get a different configuration
-SDKCONFIG ?= boards/sdkconfig
+SDKCONFIG ?= boards/sdkconfig.spiram
 SDKCONFIG_H = $(BUILD)/sdkconfig.h
 
 # the git hash of the currently supported ESP IDF version
@@ -94,6 +94,7 @@ INC_ESPCOMP += -I$(ESPCOMP)/nvs_flash/include
 INC_ESPCOMP += -I$(ESPCOMP)/freertos/include
 INC_ESPCOMP += -I$(ESPCOMP)/esp_ringbuf/include
 INC_ESPCOMP += -I$(ESPCOMP)/esp_event/include
+INC_ESPCOMP += -I$(ESPCOMP)/esp_adc_cal/include
 INC_ESPCOMP += -I$(ESPCOMP)/tcpip_adapter/include
 INC_ESPCOMP += -I$(ESPCOMP)/lwip/lwip/src/include
 INC_ESPCOMP += -I$(ESPCOMP)/lwip/port/esp32/include
@@ -185,6 +186,7 @@ SRC_C = \
 	network_ppp.c \
 	modsocket.c \
 	modesp.c \
+	esp_espnow.c \
 	esp32_ulp.c \
 	modesp32.c \
 	espneopixel.c \
@@ -192,6 +194,7 @@ SRC_C = \
 	machine_wdt.c \
 	mpthreadport.c \
 	machine_rtc.c \
+	modota.c \
 	$(SRC_MOD)
 
 EXTMOD_SRC_C = $(addprefix extmod/,\
@@ -317,6 +320,10 @@ ESPIDF_HEAP_O = $(addprefix $(ESPCOMP)/heap/,\
 	heap_caps.o \
 	heap_caps_init.o \
 	multi_heap.o \
+	)
+
+ESPIDF_ESP_CAL_O = $(addprefix $(ESPCOMP)/esp_adc_cal/,\
+	esp_adc_cal.o \
 	)
 
 ESPIDF_SOC_O = $(addprefix $(ESPCOMP)/soc/,\
@@ -665,12 +672,18 @@ ESPIDF_WPA_SUPPLICANT_O = $(addprefix $(ESPCOMP)/wpa_supplicant/,\
 	port/os_xtensa.o \
 	)
 
+$(BUILD)/$(ESPCOMP)/bootloader_support/%.o: CFLAGS += -DBOOTLOADER_BUILD=1 -I$(ESPCOMP)/bootloader_support/include_priv -I$(ESPCOMP)/bootloader_support/include -I$(ESPCOMP)/micro-ecc/micro-ecc -I$(ESPCOMP)/esp32 -Wno-error=format
+ESPIDF_BOOTLOADER_SUPPORT_O = $(addprefix $(ESPCOMP)/bootloader_support/,\
+	src/esp_image_format.o \
+	)
+
 OBJ_ESPIDF =
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_NEWLIB_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_DRIVER_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ESP32_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ESP_RINGBUF_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_HEAP_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ESP_CAL_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SOC_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_CXX_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ETHERNET_O))
@@ -701,6 +714,7 @@ LIB_ESPIDF += driver
 LIB_ESPIDF += esp32
 LIB_ESPIDF += esp_ringbuf
 LIB_ESPIDF += heap
+LIB_ESPIDF += esp_cal
 LIB_ESPIDF += soc
 LIB_ESPIDF += cxx
 LIB_ESPIDF += ethernet
@@ -741,6 +755,7 @@ $(eval $(call gen_espidf_lib_rule,driver,$(ESPIDF_DRIVER_O)))
 $(eval $(call gen_espidf_lib_rule,esp32,$(ESPIDF_ESP32_O)))
 $(eval $(call gen_espidf_lib_rule,esp_ringbuf,$(ESPIDF_ESP_RINGBUF_O)))
 $(eval $(call gen_espidf_lib_rule,heap,$(ESPIDF_HEAP_O)))
+$(eval $(call gen_espidf_lib_rule,esp_cal,$(ESPIDF_ESP_CAL_O)))
 $(eval $(call gen_espidf_lib_rule,soc,$(ESPIDF_SOC_O)))
 $(eval $(call gen_espidf_lib_rule,cxx,$(ESPIDF_CXX_O)))
 $(eval $(call gen_espidf_lib_rule,ethernet,$(ESPIDF_ETHERNET_O)))
@@ -832,7 +847,8 @@ APP_LD_ARGS += -L$(dir $(LIBGCC_FILE_NAME)) -lgcc
 APP_LD_ARGS += -L$(dir $(LIBSTDCXX_FILE_NAME)) -lstdc++
 APP_LD_ARGS += $(LIBC_LIBM)
 APP_LD_ARGS += $(ESPCOMP)/esp32/libhal.a
-APP_LD_ARGS += -L$(ESPCOMP)/esp32/lib -lcore -lmesh -lnet80211 -lphy -lrtc -lpp -lwpa -lsmartconfig -lcoexist -lwps -lwpa2
+APP_LD_ARGS += $(BUILD)/bootloader/libbootloader_support.a
+APP_LD_ARGS += -L$(ESPCOMP)/esp32/lib -lcore -lmesh -lnet80211 -lphy -lrtc -lpp -lwpa -lsmartconfig -lcoexist -lwps -lwpa2 -lespnow
 APP_LD_ARGS += $(OBJ)
 APP_LD_ARGS += $(LIB)
 APP_LD_ARGS += --end-group
