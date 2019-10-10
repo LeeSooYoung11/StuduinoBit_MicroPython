@@ -54,7 +54,7 @@ STATIC int mp_hal_i2c_scl_release(machine_i2c_obj_t *self) {
     mp_hal_i2c_delay(self);
     // For clock stretching, wait for the SCL pin to be released, with timeout.
     for (; mp_hal_pin_read(self->scl) == 0 && count; --count) {
-        mp_hal_delay_us_fast(1);
+        mp_hal_i2c_delay(self);
     }
     if (count == 0) {
         return -MP_ETIMEDOUT;
