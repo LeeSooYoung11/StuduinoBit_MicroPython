@@ -46,6 +46,10 @@
 #include "py/repl.h"
 #include "py/gc.h"
 #include "py/mphal.h"
+
+#include "extmod/vfs.h"
+#include "extmod/vfs_native.h"
+
 #include "lib/mp-readline/readline.h"
 #include "lib/utils/pyexec.h"
 #include "uart.h"
@@ -112,11 +116,17 @@ soft_reset:
     machine_pins_init();
 
     // run boot-up scripts
-    pyexec_frozen_module("_boot.py");
-    pyexec_file("boot.py");
-    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
-        pyexec_file("main.py");
+    // pyexec_frozen_module("_boot.py");
+    // === Mount internal flash file system ===
+    int res = mount_vfs(VFS_NATIVE_TYPE_SPIFLASH, VFS_NATIVE_INTERNAL_MP);
+
+    if (res == 0) {
+	    pyexec_file("boot.py");
+	    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+		pyexec_file("main.py");
+	    }
     }
+    else ESP_LOGE("MicroPython", "Error mounting Flash file system");
 
     for (;;) {
         if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {

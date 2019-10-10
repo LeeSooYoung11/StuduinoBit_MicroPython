@@ -52,7 +52,12 @@
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
 #define MICROPY_VFS                         (1)
-#define MICROPY_VFS_FAT                     (1)
+#define MICROPY_VFS_FAT                     (0)
+#define MICROPY_SDMMC_SHOW_INFO             (1) // show sdcard info after initialization
+#define CONFIG_MICROPY_FILESYSTEM_TYPE      (0)
+#define CONFIG_MICROPY_FS_TYPE0             (1)
+#define CONFIG_SDCARD_MODE                  (0)
+#define CONFIG_MICROPY_FATFS_MAX_OPEN_FILES (6)
 
 // control over Python builtins
 #define MICROPY_PY_FUNCTION_ATTRS           (1)
@@ -156,8 +161,11 @@
 #define MICROPY_FATFS_RPATH                 (2)
 #define MICROPY_FATFS_MAX_SS                (4096)
 #define MICROPY_FATFS_LFN_CODE_PAGE         437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
-#define mp_type_fileio                      mp_type_vfs_fat_fileio
-#define mp_type_textio                      mp_type_vfs_fat_textio
+//#define mp_type_fileio                      mp_type_vfs_fat_fileio
+//#define mp_type_textio                      mp_type_vfs_fat_textio
+#define mp_type_fileio                      nativefs_type_fileio
+#define mp_type_textio                      nativefs_type_textio
+
 
 // use vfs's functions for import stat and builtin open
 #define mp_import_stat mp_vfs_import_stat

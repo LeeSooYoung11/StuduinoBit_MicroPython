@@ -5,7 +5,7 @@ QSTR_DEFS = qstrdefsport.h
 
 MICROPY_PY_USSL = 0
 MICROPY_SSL_AXTLS = 0
-MICROPY_FATFS = 1
+# MICROPY_FATFS = 1
 MICROPY_PY_BTREE = 1
 
 #FROZEN_DIR = scripts
@@ -102,6 +102,8 @@ INC_ESPCOMP += -I$(ESPCOMP)/lwip/include/apps
 INC_ESPCOMP += -I$(ESPCOMP)/mbedtls/mbedtls/include
 INC_ESPCOMP += -I$(ESPCOMP)/mbedtls/port/include
 INC_ESPCOMP += -I$(ESPCOMP)/spi_flash/include
+INC_ESPCOMP += -I$(ESPCOMP)/spiffs/include
+INC_ESPCOMP += -I$(ESPCOMP)/spiffs/spiffs/src
 INC_ESPCOMP += -I$(ESPCOMP)/ulp/include
 INC_ESPCOMP += -I$(ESPCOMP)/vfs/include
 INC_ESPCOMP += -I$(ESPCOMP)/xtensa-debug-module/include
@@ -488,6 +490,19 @@ ESPIDF_SPI_FLASH_O = $(addprefix $(ESPCOMP)/spi_flash/,\
 	flash_ops.o \
 	)
 
+ESPIDF_SPIFFS_O = $(addprefix $(ESPCOMP)/spiffs/,\
+	esp_spiffs.o \
+	spiffs_api.o \
+	)
+
+ESPIDF_SPIFFS_SPIFFS_O = $(addprefix $(ESPCOMP)/spiffs/spiffs/src/,\
+	spiffs_hydrogen.o \
+	spiffs_cache.o \
+	spiffs_nucleus.o \
+	spiffs_gc.o \
+	)
+
+
 ESPIDF_ULP_O = $(addprefix $(ESPCOMP)/ulp/,\
 	ulp.o \
 	)
@@ -704,6 +719,8 @@ OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_NVS_FLASH_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_OPENSSL_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SMARTCONFIG_ACK_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SPI_FLASH_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SPIFFS_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SPIFFS_SPIFFS_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ULP_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_WPA_SUPPLICANT_O))
 
@@ -733,6 +750,8 @@ LIB_ESPIDF += nghttp
 LIB_ESPIDF += nvs_flash
 LIB_ESPIDF += smartconfig_ack
 LIB_ESPIDF += spi_flash
+LIB_ESPIDF += spiffs
+LIB_ESPIDF += spiffs_spiffs
 LIB_ESPIDF += ulp
 LIB_ESPIDF += lwip
 LIB_ESPIDF += mbedtls
@@ -774,6 +793,8 @@ $(eval $(call gen_espidf_lib_rule,nghttp,$(ESPIDF_NGHTTP_O)))
 $(eval $(call gen_espidf_lib_rule,nvs_flash,$(ESPIDF_NVS_FLASH_O)))
 $(eval $(call gen_espidf_lib_rule,smartconfig_ack,$(ESPIDF_SMARTCONFIG_ACK_O)))
 $(eval $(call gen_espidf_lib_rule,spi_flash,$(ESPIDF_SPI_FLASH_O)))
+$(eval $(call gen_espidf_lib_rule,spiffs,$(ESPIDF_SPIFFS_O)))
+$(eval $(call gen_espidf_lib_rule,spiffs_spiffs,$(ESPIDF_SPIFFS_SPIFFS_O)))
 $(eval $(call gen_espidf_lib_rule,ulp,$(ESPIDF_ULP_O)))
 $(eval $(call gen_espidf_lib_rule,lwip,$(ESPIDF_LWIP_O)))
 $(eval $(call gen_espidf_lib_rule,mbedtls,$(ESPIDF_MBEDTLS_O)))

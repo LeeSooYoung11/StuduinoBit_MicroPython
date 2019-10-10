@@ -288,16 +288,20 @@ PY_EXTMOD_O_BASENAME = \
 	extmod/modwebrepl.o \
 	extmod/modframebuf.o \
 	extmod/vfs.o \
+	extmod/vfs_native.o \
+	extmod/vfs_native_file.o \
+	extmod/vfs_native_misc.o \
 	extmod/vfs_reader.o \
-	extmod/vfs_posix.o \
-	extmod/vfs_posix_file.o \
-	extmod/vfs_fat.o \
-	extmod/vfs_fat_diskio.o \
-	extmod/vfs_fat_file.o \
 	extmod/utime_mphal.o \
 	extmod/uos_dupterm.o \
 	lib/embed/abort_.o \
 	lib/utils/printf.o \
+	# extmod/vfs_posix.o \
+	# extmod/vfs_posix_file.o \
+	# extmod/vfs_fat.o \
+	# extmod/vfs_fat_diskio.o \
+	# extmod/vfs_fat_file.o \
+
 
 # prepend the build destination prefix to the py object files
 PY_CORE_O = $(addprefix $(BUILD)/, $(PY_CORE_O_BASENAME))
