@@ -5,8 +5,10 @@ QSTR_DEFS = qstrdefsport.h
 
 MICROPY_PY_USSL = 0
 MICROPY_SSL_AXTLS = 0
-# MICROPY_FATFS = 1
 MICROPY_PY_BTREE = 1
+
+# 1:FATFS, 0:SPIFFS
+MICROPY_FATFS = 1
 
 #FROZEN_DIR = scripts
 FROZEN_MPY_DIR = modules
@@ -152,6 +154,10 @@ else
 #CFLAGS += -fdata-sections -ffunction-sections
 COPT += -Os -DNDEBUG
 #LDFLAGS += --gc-sections
+endif
+
+ifeq ($(MICROPY_FATFS), 1)
+CFLAGS += -DMICROPY_FATFS=1
 endif
 
 # Enable SPIRAM support if CONFIG_SPIRAM_SUPPORT=y in sdkconfig
@@ -1046,7 +1052,12 @@ $(BUILD)/bootloader.elf: $(BOOTLOADER_OBJ) $(addprefix $(BOOTLOADER_LIB_DIR)/lib
 # Declarations to build the partitions
 
 PYTHON2 ?= python2
+
+ifeq ($(MICROPY_FATFS),1)
 PART_SRC = partitions.csv
+else
+PART_SRC = partitions_spiffs.csv
+endif
 
 $(BUILD)/partitions.bin: $(PART_SRC)
 	$(ECHO) "Create $@"

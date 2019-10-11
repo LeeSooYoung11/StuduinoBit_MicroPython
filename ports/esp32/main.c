@@ -116,6 +116,13 @@ soft_reset:
     machine_pins_init();
 
     // run boot-up scripts
+#if MICROPY_FATFS == 1
+    pyexec_frozen_module("_boot.py");
+    pyexec_file("boot.py");
+    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+        pyexec_file("main.py");
+    }
+#else
     // pyexec_frozen_module("_boot.py");
     // === Mount internal flash file system ===
     int res = mount_vfs(VFS_NATIVE_TYPE_SPIFLASH, VFS_NATIVE_INTERNAL_MP);
@@ -127,6 +134,7 @@ soft_reset:
 	    }
     }
     else ESP_LOGE("MicroPython", "Error mounting Flash file system");
+#endif
 
     for (;;) {
         if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
