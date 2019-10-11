@@ -32,6 +32,7 @@
  */
 
 #include "py/mpconfig.h"
+#if MICROPY_VFS
 
 #include <string.h>
 #include <stdio.h>
@@ -1131,4 +1132,4 @@ const mp_obj_type_t mp_native_vfs_type = {
 	.make_new = native_vfs_make_new,
 	.locals_dict = (mp_obj_dict_t*)&native_vfs_locals_dict,
 };
-
+#endif
