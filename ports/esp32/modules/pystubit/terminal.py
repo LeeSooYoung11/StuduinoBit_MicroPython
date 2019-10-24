@@ -145,13 +145,14 @@ class StuduinoBitAnalogPin(StuduinoBitAnalogPinMixin):
         self.adc = None
 
 
-class StuduinoBitAnalogDitialPin(StuduinoBitDigitalPinMixin,
+class StuduinoBitAnalogDigialPin(StuduinoBitDigitalPinMixin,
                                  StuduinoBitAnalogPinMixin):
-    def __init__(self, pin):
+    def __init__(self, pin, mp=False):
         self.pin = pin
         self.duty = 0
         self.pwm = None
         self.adc = None
+	self.mp = mp
 
     def write_digital(self, value):
         if self.adc is not None:
@@ -181,7 +182,12 @@ class StuduinoBitAnalogDitialPin(StuduinoBitDigitalPinMixin,
         if self.pwm is not None:
             self.pwm.deinit()
             self.pwm = None
-        return super().read_analog(mv)
+
+        if self.mp:
+            return int(super().read_analog(False) / 4095 * 1024)
+        else:
+            return int(super().read_analog(mv))
+
 
 # for singleton pattern
 # Implement used global value,
@@ -195,25 +201,25 @@ def StuduinoBitTerminal(pin):
     if pin == 'P0':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(32)
+            __tpin[i] = StuduinoBitAnalogDigialPin(32)
         return __tpin[i]
 
     elif pin == 'P1':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(33)
+            __tpin[i] = StuduinoBitAnalogDigialPin(33)
         return __tpin[i]
 
     elif pin == 'P2':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(36)
+            __tpin[i] = StuduinoBitAnalogDigialPin(36)
         return __tpin[i]
 
     elif pin == 'P3':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(39)
+            __tpin[i] = StuduinoBitAnalogDigialPin(39)
         return __tpin[i]
 
     elif pin == 'P4':
@@ -225,7 +231,7 @@ def StuduinoBitTerminal(pin):
     elif pin == 'P5':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(15)
+            __tpin[i] = StuduinoBitDigitalPin(15)
         return __tpin[i]
 
     elif pin == 'P6':
@@ -243,13 +249,13 @@ def StuduinoBitTerminal(pin):
     elif pin == 'P8':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(14)
+            __tpin[i] = StuduinoBitDigitalPin(14)
         return __tpin[i]
 
     elif pin == 'P9':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(12)
+            __tpin[i] = StuduinoBitDigitalPin(12)
         return __tpin[i]
 
     elif pin == 'P10':
@@ -291,7 +297,7 @@ def StuduinoBitTerminal(pin):
     elif pin == 'P16':
         i = int(pin[1:])
         if __tpin[i] is None:
-            __tpin[i] = StuduinoBitAnalogDitialPin(13)
+            __tpin[i] = StuduinoBitDigitalPin(13)
         return __tpin[i]
 
     elif pin == 'P19':
@@ -308,3 +314,36 @@ def StuduinoBitTerminal(pin):
 
     else:
         raise ValueError("pin must be 'P0'-'P16','P19','P20'")
+
+__tpin_mb = [None] * 4
+
+def StuduinoBitTerminalForMB(pin):
+    global __tpin_mb
+    if pin == 'P0':
+        i = int(pin[1:])
+        if __tpin_mb[i] is None:
+            __tpin_mb[i] = StuduinoBitAnalogDigialPin(32, True)
+        return __tpin_mb[i]
+
+    elif pin == 'P1':
+        i = int(pin[1:])
+        if __tpin_mb[i] is None:
+            __tpin_mb[i] = StuduinoBitAnalogDigialPin(33, True)
+        return __tpin_mb[i]
+
+    elif pin == 'P2':
+        i = int(pin[1:])
+        if __tpin_mb[i] is None:
+            __tpin_mb[i] = StuduinoBitAnalogDigialPin(36, True)
+        return __tpin_mb[i]
+
+    elif pin == 'P3':
+        i = int(pin[1:])
+        if __tpin_mb[i] is None:
+            __tpin_mb[i] = StuduinoBitAnalogDigialPin(39, True)
+        return __tpin_mb[i]
+
+    else:
+        raise ValueError("pin must be 'P0'-'P3'")
+
+

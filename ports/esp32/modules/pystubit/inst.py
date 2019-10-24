@@ -19,7 +19,7 @@ display = StuduinoBitDisplay()
 """
 Terminal
 """
-from .terminal import StuduinoBitTerminal
+from .terminal import StuduinoBitTerminal, StuduinoBitTerminalForMB
 p0 = StuduinoBitTerminal('P0')
 p1 = StuduinoBitTerminal('P1')
 p2 = StuduinoBitTerminal('P2')
@@ -39,6 +39,11 @@ p15 = StuduinoBitTerminal('P15')
 p16 = StuduinoBitTerminal('P16')
 p19 = StuduinoBitTerminal('P19')
 p20 = StuduinoBitTerminal('P20')
+
+pin0 = StuduinoBitTerminalForMB('P0')
+pin1 = StuduinoBitTerminalForMB('P1')
+pin2 = StuduinoBitTerminalForMB('P2')
+pin3 = StuduinoBitTerminalForMB('P3')
 
 """
 Bus

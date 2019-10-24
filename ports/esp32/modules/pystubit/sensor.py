@@ -58,26 +58,26 @@ class StuduinoBitAccelerometer:
         self._icm20948 = get_icm20948_object()
         self._icm20948.accel_fs(fs)
         self._icm20948.accel_sf(sf)
+        self._axis_correct = (1, 1, 1)
 
     def get_x(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.acceleration[0] * d) / d
+        return round(self._icm20948.acceleration[0] *
+                     self._axis_correct[0], ndigits)
 
     def get_y(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.acceleration[1] * d) / d
+        return round(self._icm20948.acceleration[1] *
+                     self._axis_correct[1], ndigits)
 
     def get_z(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.acceleration[2] * d) / d
+        return round(self._icm20948.acceleration[2] *
+                     self._axis_correct[2], ndigits)
 
     def get_values(self, ndigits=2):
-        d = pow(10, ndigits)
         value = self._icm20948.acceleration
 
-        x = int(value[0] * d) / d
-        y = int(value[1] * d) / d
-        z = int(value[2] * d) / d
+        x = round(value[0] * self._axis_correct[0], ndigits)
+        y = round(value[1] * self._axis_correct[1], ndigits)
+        z = round(value[2] * self._axis_correct[2], ndigits)
         return (x, y, z)
 
     def current_gesture(self):
@@ -98,6 +98,17 @@ class StuduinoBitAccelerometer:
     def set_sf(self, value):
         self._icm20948.accel_sf(value)
 
+    def set_axis(self, mode):
+        if type(mode) != str:
+            raise TypeError("set_axis() expected 'sbmp'/'sbs'/'mb', \
+but {} found".format(type(mode)))
+        if (mode is 'sbmp') or (mode is 'mb'):
+            self._axis_correct = (1, 1, 1)
+        elif (mode is 'sbs'):
+            self._axis_correct = (-1, 1, -1)
+        else:
+            raise NameError("name '{}' is not defined".format(mode))
+
 
 class StuduinoBitGyro:
     def __init__(self, fs='250dps', sf='dps'):
@@ -105,25 +116,25 @@ class StuduinoBitGyro:
 
         self._icm20948.gyro_fs(fs)
         self._icm20948.gyro_sf(sf)
+        self._axis_correct = (1, 1, 1)
 
     def get_x(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.gyro[0] * d) / d
+        return round(self._icm20948.gyro[0] *
+                     self._axis_correct[0], ndigits)
 
     def get_y(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.gyro[1] * d) / d
+        return round(self._icm20948.gyro[1] *
+                     self._axis_correct[1], ndigits)
 
     def get_z(self, ndigits=2):
-        d = pow(10, ndigits)
-        return int(self._icm20948.gyro[2] * d) / d
+        return round(self._icm20948.gyro[2] *
+                     self._axis_correct[2], ndigits)
 
     def get_values(self, ndigits=2):
-        d = pow(10, ndigits)
         value = self._icm20948.gyro
-        x = int(value[0] * d) / d
-        y = int(value[1] * d) / d
-        z = int(value[2] * d) / d
+        x = round(value[0] * self._axis_correct[0], ndigits)
+        y = round(value[1] * self._axis_correct[1], ndigits)
+        z = round(value[2] * self._axis_correct[2], ndigits)
         return (x, y, z)
 
     def set_fs(self, value):
@@ -131,6 +142,17 @@ class StuduinoBitGyro:
 
     def set_sf(self, value):
         self._icm20948.gyro_sf(value)
+
+    def set_axis(self, mode):
+        if not (type(mode) is str):
+            raise TypeError("set_axis() expected 'sbmp'/'sbs', \
+but {} found".format(type(mode)))
+        if (mode is 'sbmp'):
+            self._axis_correct = (1, 1, 1)
+        elif (mode is 'sbs'):
+            self._axis_correct = (-1, 1, -1)
+        else:
+            raise NameError("name '{}' is not defined".format(mode))
 
 
 class StuduinoBitCompass:
@@ -143,6 +165,7 @@ class StuduinoBitCompass:
             self._calibrated = False
             self._offset = (0, 0, 0)
             self._scale = (1, 1, 1)
+        self._axis_correct = (1, 1, 1)
 
     def get_x(self):
         return self.get_values()[0]
@@ -154,6 +177,13 @@ class StuduinoBitCompass:
         return self.get_values()[2]
 
     def get_values(self):
+        value = self.get_pure_values()
+        x = value[0] * self._axis_correct[0]
+        y = value[1] * self._axis_correct[1]
+        z = value[2] * self._axis_correct[2]
+        return (x, y, z)
+
+    def get_pure_values(self):
         mag = self._icm20948.magnetic
         if not self._calibrated:
             return mag
@@ -162,6 +192,19 @@ class StuduinoBitCompass:
             for i, val in enumerate(mag):
                 res[i] = (val - self._offset[i]) * self._scale[i]
             return tuple(res)
+
+    def set_axis(self, mode):
+        if type(mode) != str:
+            raise TypeError("set_axis() expected 'sbmp'/'sbs'/'mb', \
+but {} found".format(type(mode)))
+        if (mode is 'sbmp'):
+            self._axis_correct = (1, 1, 1)
+        elif (mode is 'sbs'):
+            self._axis_correct = (1, -1, -1)
+        elif (mode is 'mb'):
+            self._axis_correct = (-1, -1, 1)
+        else:
+            raise NameError("name '{}' is not defined".format(mode))
 
     def calibrate(self):
         # Reference:
@@ -174,7 +217,7 @@ class StuduinoBitCompass:
         self._offset = (0, 0, 0)
         self._scale = (1, 1, 1)
 
-        reading = self.get_values()
+        reading = self.get_pure_values()
         minx = maxx = reading[0]
         miny = maxy = reading[1]
         minz = maxz = reading[2]
@@ -197,7 +240,7 @@ class StuduinoBitCompass:
             if x == 0 or x == 4 or y == 0 or y == 4:
                 if display.get_pixel(x, y) == (0, 0, 0):
                     display.set_pixel(x, y, 0x0a000a)
-                    reading = self.get_values()
+                    reading = self.get_pure_values()
                     minx = min(minx, reading[0])
                     maxx = max(maxx, reading[0])
                     miny = min(miny, reading[1])
@@ -262,7 +305,7 @@ class StuduinoBitCompass:
             self.calibrate()
 
         ax, ay, az = self._icm20948.acceleration
-        mx, my, mz = self.get_values()
+        mx, my, mz = self.get_pure_values()
 
         mx = mx
         my = -my
@@ -414,5 +457,7 @@ class __SBTemperature:
         steinhart = 1.0 / steinhart                             # Invert
         steinhart -= 273.15                               # convert to C
         # print("Temperature {0} *C".format(steinhart))
-        steinhart = int(steinhart * pow(10, ndigits)) / pow(10, ndigits)
+        # steinhart = int(steinhart * pow(10, ndigits)) / pow(10, ndigits)
+        steinhart = round(steinhart, ndigits)
         return steinhart
+
