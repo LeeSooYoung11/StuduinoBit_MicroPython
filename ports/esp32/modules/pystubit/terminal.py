@@ -120,16 +120,18 @@ class StuduinoBitAnalogPinMixin():
             self.adc = machine.ADC(self.pin)
             self.adc.atten(self.adc.ATTN_11DB)
 
-        if mv:
-            return self.adc.read()
+        val = self.adc.readraw()
+        if (val == 0) or (val == 4095):
+            if mv:
+                val = val / 4095 * 3300
         else:
-            raw = self.adc.readraw()
             calib = self.adc.read()
-            if (raw >= 150) and (raw <= 2450):
-                val = calib / 3300 * 4095
+            if mv:
+                val = calib
             else:
-                val = raw
-            return val
+                val = calib / 3300 * 4095
+
+        return val
 
 
 class StuduinoBitDigitalPin(StuduinoBitDigitalPinMixin):
@@ -184,7 +186,7 @@ class StuduinoBitAnalogDigialPin(StuduinoBitDigitalPinMixin,
             self.pwm = None
 
         if self.mp:
-            return int(super().read_analog(False) / 4095 * 1024)
+            return int(super().read_analog(False) / 4095 * 1023)
         else:
             return int(super().read_analog(mv))
 
