@@ -41,8 +41,7 @@ class StuduinoBitImage(BuiltinColor):
     __PAD = 0
     __PIX_MIN = 0
     __PIX_MAX = 9
-    __PIX_MAXCOLOR_FACTOR = 0x1f
-    __PIX_MAXCOLOR = 0xffffff
+    __PIX_MAXCOLOR_FACTOR = 0xff
 
     def __fromsize(args):
         width = args[0]
@@ -180,8 +179,6 @@ class StuduinoBitImage(BuiltinColor):
            rgb[1] > StuduinoBitImage.__PIX_MAXCOLOR_FACTOR or
            rgb[2] > StuduinoBitImage.__PIX_MAXCOLOR_FACTOR):
             return False
-        if (color_value > 0x1f1f1f):
-            return False
         return True
 
     def set_pixel_color(self, x, y, color):
@@ -232,14 +229,14 @@ class StuduinoBitImage(BuiltinColor):
         if self.__image[y][x] != 0:
             # pos = abs(x-(self.width()-1)) * self.height() + y + 1
             if (x, y) in self.__color.keys():
-                val = self.__color[(x, y)]
+                color = self.__color[(x, y)]
             else:
-                val = self.__base_color
+                color = self.__base_color
 
             if hex:
-                return val
+                return color
             else:
-                return _24bit_rgb(val)
+                return _24bit_rgb(color)
 
         if hex:
             return 0

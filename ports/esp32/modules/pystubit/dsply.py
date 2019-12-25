@@ -81,6 +81,8 @@ class StuduinoBitDisplay(BuiltinColor):
     def is_on(self):
         return self.__display.is_on()
 
+    def set_rgb_max_factor(self, max_factor):
+        self.__display.set_rgb_max_factor(max_factor)
 
 """ ---------------------------------------------------------------------- """
 """ The LED display ------------------------------------------------------ """
@@ -91,7 +93,7 @@ class __SBDisplay(BuiltinColor):
 
     There is a single display object that has an image.
     """
-    __PIX_MAXCOLOR_FACTOR = 31
+    __PIX_MAXCOLOR_FACTOR = 0xff
 
     def __init__(self):
         """Initialise the display.
@@ -107,14 +109,36 @@ class __SBDisplay(BuiltinColor):
 
         self.__bgthid = -1
 
+        self.a = 0
+        self.b = 31
+
+    # 明るさの上限を決めるための社内用API
+    def set_rgb_max_factor(self, max_factor):
+	if (max_factor > __SBDisplay.__PIX_MAXCOLOR_FACTOR):
+            raise ValueError('color out of bounds')
+        max_factor = max_factor if max_factor > 31 else 31
+
+        self.a = (max_factor - 31) / ( 255 - 31)
+        self.b = 31 - self.a * 31
+
+    def __board_factor(self, uf):
+        return int(uf if uf < 32 else self.a * uf + self.b)
+
+    def __user_factor(self, bf):
+        if (self.a == 0):
+            return bf
+
+        return int(bf if bf < 32 else (bf - self.b) / self.a)
+
     def __print(self, image, color):
         """Output to the display.
         """
         for x in range(image.width()):
             for y in range(image.height()):
                 val = image.get_pixel_color(x, y)
+                val = tuple(map(self.__board_factor, val))
                 if (val != (0, 0, 0)) and (color is not None):
-                    val = color
+                    val = list(map(self.__board_factor, color))
                 pos = abs(x-4) * 5 + y
                 self.__np[pos] = val
         self.__np.write()
@@ -129,29 +153,38 @@ class __SBDisplay(BuiltinColor):
 
         pos = abs(x-4) * 5 + y
         val = self.__np[pos]
+        val = list(map(self.__user_factor, val))
         return val
 
     def set_pixel(self, x, y, color):
-        """Set the dsplay at LED pixel (x,y) to color.
-            """
+        # Set the dsplay at LED pixel (x,y) to color.
+        # Check argument (Type check).
         if (type(color) is tuple) or (type(color) is list):
-            val = color
+            rgb = color
         elif (type(color) is int):
-            val = _24bit_rgb(color)
+            rgb = _24bit_rgb(color)
         else:
             raise TypeError('color takes a (R,G,B) or [R,G,B] or #RGB')
 
+        # Check argument (X-Y range check).
         if y < 0 or x < 0 or y > 4 or x > 4:
             raise ValueError('index out of bounds')
 
-        if(val[0] < 0 or val[0] > __SBDisplay.__PIX_MAXCOLOR_FACTOR or
-           val[1] < 0 or val[1] > __SBDisplay.__PIX_MAXCOLOR_FACTOR or
-           val[2] < 0 or val[2] > __SBDisplay.__PIX_MAXCOLOR_FACTOR):
+        # Check argument (Color min max check).
+        if ((type(color) is int) and (color > 0xffffff)):
+            raise ValueError('color factor must be 0-0xffffff')
+        
+        if (rgb[0] < 0 or rgb[0] > __SBDisplay.__PIX_MAXCOLOR_FACTOR or
+            rgb[1] < 0 or rgb[1] > __SBDisplay.__PIX_MAXCOLOR_FACTOR or
+            rgb[2] < 0 or rgb[2] > __SBDisplay.__PIX_MAXCOLOR_FACTOR):
             raise ValueError('color factor must be 0-{0}'.
                              format(__SBDisplay.__PIX_MAXCOLOR_FACTOR))
 
+        # ceiling process
+        rgb = list(map(self.__board_factor, rgb))
+
         pos = abs(x-4) * 5 + y
-        self.__np[pos] = val
+        self.__np[pos] = rgb
         self.__np.write()
         time.sleep_ms(1)
 
