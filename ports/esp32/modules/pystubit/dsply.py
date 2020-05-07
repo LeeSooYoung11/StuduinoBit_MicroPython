@@ -114,7 +114,7 @@ class __SBDisplay(BuiltinColor):
 
     # 明るさの上限を決めるための社内用API
     def set_rgb_max_factor(self, max_factor):
-	if (max_factor > __SBDisplay.__PIX_MAXCOLOR_FACTOR):
+        if (max_factor > __SBDisplay.__PIX_MAXCOLOR_FACTOR):
             raise ValueError('color out of bounds')
         max_factor = max_factor if max_factor > 31 else 31
 
@@ -153,7 +153,7 @@ class __SBDisplay(BuiltinColor):
 
         pos = abs(x-4) * 5 + y
         val = self.__np[pos]
-        val = list(map(self.__user_factor, val))
+        val = tuple(map(self.__user_factor, val))
         return val
 
     def set_pixel(self, x, y, color):
