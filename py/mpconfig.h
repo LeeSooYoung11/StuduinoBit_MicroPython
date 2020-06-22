@@ -31,6 +31,11 @@
 #define MICROPY_VERSION_MINOR 10
 #define MICROPY_VERSION_MICRO 0
 
+// Current version of MicroPython for Studuino:bit
+#define MPY4SB_VERSION_MAJOR 0
+#define MPY4SB_VERSION_MINOR 9
+#define MPY4SB_VERSION_MICRO 0
+
 // Combined version as a 32-bit number for convenience
 #define MICROPY_VERSION ( \
     MICROPY_VERSION_MAJOR << 16 \

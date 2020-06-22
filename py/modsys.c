@@ -56,27 +56,35 @@ STATIC const mp_obj_tuple_t mp_sys_version_info_obj = {{&mp_type_tuple}, 3, {I(3
 
 // sys.implementation object
 // this holds the MicroPython version
+STATIC const mp_obj_tuple_t mp4sb_sys_implementation_version_info_obj = {
+    {&mp_type_tuple},
+    3,
+    { I(MPY4SB_VERSION_MAJOR), I(MPY4SB_VERSION_MINOR), I(MPY4SB_VERSION_MICRO) }
+};
+
 STATIC const mp_obj_tuple_t mp_sys_implementation_version_info_obj = {
     {&mp_type_tuple},
     3,
     { I(MICROPY_VERSION_MAJOR), I(MICROPY_VERSION_MINOR), I(MICROPY_VERSION_MICRO) }
 };
+
+
 #if MICROPY_PY_ATTRTUPLE
 STATIC const qstr impl_fields[] = { MP_QSTR_name, MP_QSTR_version };
 STATIC MP_DEFINE_ATTRTUPLE(
     mp_sys_implementation_obj,
     impl_fields,
     2,
-        MP_ROM_QSTR(MP_QSTR_micropython),
-        MP_ROM_PTR(&mp_sys_implementation_version_info_obj)
+        MP_ROM_QSTR(MP_QSTR_mpy4sb),
+        MP_ROM_PTR(&mp4sb_sys_implementation_version_info_obj)
 );
 #else
 STATIC const mp_rom_obj_tuple_t mp_sys_implementation_obj = {
     {&mp_type_tuple},
     2,
     {
-        MP_ROM_QSTR(MP_QSTR_micropython),
-        MP_ROM_PTR(&mp_sys_implementation_version_info_obj),
+        MP_ROM_QSTR(MP_QSTR_mpy4sb),
+        MP_ROM_PTR(&mp4sb_sys_implementation_version_info_obj)
     }
 };
 #endif
